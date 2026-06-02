@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marro D2MS — NI Dispositions</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+:root {--bg:#faf9f7;--card:#fff;--border:#e8e5e0;--text:#2c1810;--text2:#6b5b50;--text3:#9b8b7f;--brown-800:#4a3728;--brown-600:#6b5b50;--brown-200:#d4c8bc;--amber:#d97706;--amber-light:#fef3c7;--green:#059669;--green-light:#d1fae5;--red:#dc2626;--red-light:#fee2e2;--blue:#2563eb;--purple:#7c3aed;--teal:#0d9488;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+.nav-bar{display:flex;gap:0;background:var(--brown-800);padding:0 24px}
+.nav-link{padding:12px 20px;font-size:.82rem;font-weight:600;color:rgba(255,255,255,.6);text-decoration:none;border-bottom:2px solid transparent;transition:.15s}
+.nav-link:hover{color:#fff}
+.nav-link.active{color:#fff;border-bottom-color:#fff}
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border);background:var(--card)}
+.header h1{font-size:1.15rem;font-weight:700;color:var(--brown-800)}
+.header p{font-size:.78rem;color:var(--text2);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:.78rem;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--bg)}.btn-ghost{border:none}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-card .label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3)}
+.stat-card .value{font-size:1.6rem;font-weight:700;color:var(--brown-800);margin:2px 0}
+.stat-card .sub{font-size:.72rem;color:var(--text2)}
+.stat-card.warn{border-left:3px solid var(--red)}
+.stat-card.critical{border-left:3px solid var(--red)}
+.stat-card.review{border-left:3px solid var(--amber)}
+.stat-card.ni-short{border-left:3px solid var(--blue)}
+.stat-card.ni-medium{border-left:3px solid var(--purple)}
+.stat-card.ni-long{border-left:3px solid var(--green)}
+.toolbar{display:flex;align-items:center;gap:10px;padding:10px 24px;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--border)}
+.search-box{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;flex:0 1 220px}
+.search-box input{border:none;background:none;outline:none;font-size:.82rem;width:100%;color:var(--text)}
+.search-box svg{flex-shrink:0;color:var(--text3)}
+select{appearance:none;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b5b50'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--border);border-radius:6px;padding:6px 28px 6px 10px;font-size:.82rem;color:var(--text);cursor:pointer}
+.filter-chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:.78rem;cursor:pointer;transition:.15s}
+.chip.active{background:var(--brown-800);color:#fff;border-color:var(--brown-800)}
+.chip[data-flag="CRITICAL"].active{background:var(--red);border-color:var(--red)}
+.chip[data-flag="REVIEW"].active{background:var(--amber);border-color:var(--amber)}
+.chip[data-flag="SHORT"].active{background:var(--blue);border-color:var(--blue)}
+.chip[data-flag="MEDIUM"].active{background:var(--purple);border-color:var(--purple)}
+.chip[data-flag="LONG"].active{background:var(--green);border-color:var(--green)}
+.results-count{font-size:.78rem;color:var(--text3);margin-left:auto}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);padding:0 24px;background:var(--card)}
+.tab-btn{padding:10px 20px;font-size:.82rem;font-weight:600;border:none;background:none;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
+.tab-btn.active{color:var(--brown-800);border-bottom-color:var(--brown-800)}
+.panel{display:none;padding:20px 24px}.panel.active{display:block}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-card h3{font-size:.82rem;font-weight:600;color:var(--brown-800);margin-bottom:8px}
+.chart-container{width:100%;height:280px}
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px}
+.rep-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:.15s}
+.rep-card:hover{border-color:var(--brown-800);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.rep-name{font-size:.82rem;font-weight:700;color:var(--brown-800);margin-bottom:6px}
+.rep-metrics{display:flex;gap:12px;margin-bottom:8px}
+.metric{text-align:center}.mv{font-size:1rem;font-weight:700;color:var(--text)}.ml{font-size:.68rem;color:var(--text3)}
+.short-metric .mv,.crit-metric .mv{color:var(--red)}
+.bar{height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+.offenders{margin-top:20px}
+.offenders h3{font-size:.88rem;font-weight:700;color:var(--brown-800);margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+thead th{position:sticky;top:0;background:var(--bg);padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
+thead th:hover{color:var(--brown-800)}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tbody tr:hover{background:#f5f3f0}
+.sort-arrow{font-size:.65rem;opacity:.4}
+th.sorted .sort-arrow{opacity:1}
+.flag-critical{color:var(--red);font-weight:700}
+.flag-review{color:var(--amber);font-weight:700}
+.flag-ni-short{color:var(--blue);font-weight:700}
+.flag-ni-medium{color:var(--purple);font-weight:700}
+.flag-ni-long{color:var(--green);font-weight:700}
+.crit{color:var(--red);font-weight:700}
+.rep-badge{display:inline-block;padding:2px 8px;border-radius:4px;background:#f0ebe6;font-size:.75rem;font-weight:500}
+.code-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600}
+.code-TOOEXP{background:#dbeafe;color:#1e40af}.code-PAYISSUE{background:#fef3c7;color:#92400e}
+.code-FUSSY{background:#fce7f3;color:#9d174d}.code-MEDIFOOD{background:#d1fae5;color:#065f46}
+.code-HEALTH{background:#ede9fe;color:#5b21b6}
+.table-wrap{overflow-x:auto}
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px}
+.page-btn{padding:4px 12px;border:1px solid var(--border);border-radius:4px;background:var(--card);font-size:.78rem;cursor:pointer}
+.page-btn.active{background:var(--brown-800);color:#fff;border-color:var(--brown-800)}
+.page-btn:disabled{opacity:.4;cursor:default}
+mark{background:#fde68a;padding:0 1px;border-radius:2px}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}.toolbar{flex-direction:column;align-items:stretch}}
+</style>
+</head>
+<body>
+<div class="nav-bar">
+  <a class="nav-link" href="index.html">Hub</a>
+  <a class="nav-link active" href="ni.html">Short NI</a>
+  <a class="nav-link" href="callbacks.html">Callbacks</a>
+  <a class="nav-link" href="convertibles.html">Other Convertibles</a>
+</div>
+<div class="header">
+  <div class="header-left">
+    <h1>Marro D2MS — NI Dispositions</h1>
+    <p>%%SUBTITLE%%</p>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-ghost" onclick="exportCSV()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export CSV
+    </button>
+  </div>
+</div>
+<div class="stats-row" id="statsRow"></div>
+<div class="toolbar">
+  <div class="search-box">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <input type="text" id="searchInput" placeholder="Search customer, mobile, rep..." oninput="applyFilters()">
+  </div>
+  <select id="repFilter" onchange="applyFilters()"><option value="">All Reps</option></select>
+  <div class="filter-chips">
+    <button class="chip active" data-flag="" onclick="setFlag(this)">All</button>
+    <button class="chip" data-flag="CRITICAL" onclick="setFlag(this)">Critical (&lt;30s)</button>
+    <button class="chip" data-flag="REVIEW" onclick="setFlag(this)">Review (30s–1m)</button>
+    <button class="chip" data-flag="SHORT" onclick="setFlag(this)">Short (1–3m)</button>
+    <button class="chip" data-flag="MEDIUM" onclick="setFlag(this)">Medium (3–5m)</button>
+    <button class="chip" data-flag="LONG" onclick="setFlag(this)">Long (5m+)</button>
+  </div>
+  <select id="dateFilter" onchange="applyFilters()">
+    <option value="">All Dates</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option>
+  </select>
+  <div class="results-count" id="resultsCount"></div>
+</div>
+<div class="tabs">
+  <button class="tab-btn active" data-tab="dashboard" onclick="switchTab(this)">Dashboard</button>
+  <button class="tab-btn" data-tab="records" onclick="switchTab(this)">All Records</button>
+</div>
+<div class="panel active" id="panel-dashboard">
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Records by Rep</h3><div class="chart-container" id="chartReps"></div></div>
+    <div class="chart-card"><h3>Talk Time Distribution (30s brackets)</h3><div class="chart-container" id="chartDist"></div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Category Breakdown by Rep</h3><div class="chart-container" id="chartStack"></div></div>
+    <div class="chart-card"><h3>Timeline — by Month</h3><div class="chart-container" id="chartTimeline"></div></div>
+  </div>
+  <h3 style="font-size:.88rem;font-weight:700;color:var(--brown-800);margin:20px 0 12px">Rep Overview</h3>
+  <div class="rep-grid" id="repGrid"></div>
+  <div class="offenders">
+    <h3>Top 15 — Highest Attempts with Critical Talk Time (&lt;30s)</h3>
+    <table>
+      <thead><tr><th>Rep</th><th>Customer</th><th>Mobile</th><th>Talk Time</th><th>Attempts</th><th>Last Call</th></tr></thead>
+      <tbody id="offendersBody"></tbody>
+    </table>
+  </div>
+</div>
+<div class="panel" id="panel-records">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th data-col="lastCall" onclick="sortBy('lastCall')" class="sorted">Last Call <span class="sort-arrow">&#9660;</span></th>
+        <th data-col="rep" onclick="sortBy('rep')">Rep <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="customer" onclick="sortBy('customer')">Customer <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="phone" onclick="sortBy('phone')">Mobile <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="talkSeconds" onclick="sortBy('talkSeconds')">Talk Time <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="attempts" onclick="sortBy('attempts')">Attempts <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="flag" onclick="sortBy('flag')">Category <span class="sort-arrow">&#9650;</span></th>
+        <th data-col="importWeek" onclick="sortBy('importWeek')">Import Wk <span class="sort-arrow">&#9650;</span></th>
+      </tr></thead>
+      <tbody id="recordsBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="pagination"></div>
+</div>
+<script>
+var DATA = %%DATA%%;
+var filtered = DATA.slice();
+var sortCol = 'lastCall', sortDir = -1;
+var PAGE_SIZE = 50;
+var currentPage = 1;
+var activeFlag = '';
+
+function fmt(s) {
+  if (s < 60) return '0:' + String(s).padStart(2,'0');
+  var m = Math.floor(s/60), ss = s % 60;
+  return m + ':' + String(ss).padStart(2,'0');
+}
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function flagLabel(f) {
+  if (f === 'CRITICAL') return 'Critical';
+  if (f === 'REVIEW') return 'Review';
+  if (f === 'SHORT') return 'Short';
+  if (f === 'MEDIUM') return 'Medium';
+  if (f === 'LONG') return 'Long';
+  return f;
+}
+
+function flagClass(f) {
+  if (f === 'CRITICAL') return 'flag-critical';
+  if (f === 'REVIEW') return 'flag-review';
+  if (f === 'SHORT') return 'flag-ni-short';
+  if (f === 'MEDIUM') return 'flag-ni-medium';
+  if (f === 'LONG') return 'flag-ni-long';
+  return '';
+}
+
+function applyFilters() {
+  var q = document.getElementById('searchInput').value.toLowerCase();
+  var rep = document.getElementById('repFilter').value;
+  var days = document.getElementById('dateFilter').value;
+  var now = Date.now();
+  filtered = DATA.filter(function(r) {
+    if (activeFlag && r.flag !== activeFlag) return false;
+    if (rep && r.rep !== rep) return false;
+    if (days) {
+      var d = new Date(r.lastCall);
+      if ((now - d.getTime()) > days * 86400000) return false;
+    }
+    if (q) {
+      var hay = (r.customer + ' ' + r.phone + ' ' + r.rep + ' ' + r.catName).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  currentPage = 1;
+  updateStats();
+  renderCharts();
+  renderRepGrid();
+  renderOffenders();
+  renderRecords();
+}
+
+function setFlag(btn) {
+  var chips = document.querySelectorAll('.chip');
+  for (var i = 0; i < chips.length; i++) chips[i].classList.remove('active');
+  btn.classList.add('active');
+  activeFlag = btn.getAttribute('data-flag');
+  applyFilters();
+}
+
+function switchTab(btn) {
+  var btns = document.querySelectorAll('.tab-btn');
+  var panels = document.querySelectorAll('.panel');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
+  btn.classList.add('active');
+  document.getElementById('panel-' + btn.getAttribute('data-tab')).classList.add('active');
+  if (btn.getAttribute('data-tab') === 'records') renderRecords();
+}
+
+function updateStats() {
+  var total = filtered.length;
+  var crit = 0, rev = 0, short_ = 0, med = 0, long_ = 0;
+  for (var i = 0; i < filtered.length; i++) {
+    var f = filtered[i].flag;
+    if (f === 'CRITICAL') crit++;
+    else if (f === 'REVIEW') rev++;
+    else if (f === 'SHORT') short_++;
+    else if (f === 'MEDIUM') med++;
+    else if (f === 'LONG') long_++;
+  }
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-card"><div class="label">Total NI Records</div><div class="value">' + total.toLocaleString() + '</div><div class="sub">All NI dispositions</div></div>' +
+    '<div class="stat-card critical"><div class="label">Critical (&lt;30s)</div><div class="value">' + crit.toLocaleString() + '</div><div class="sub">' + (total ? (crit/total*100).toFixed(1) : 0) + '% of total</div></div>' +
+    '<div class="stat-card review"><div class="label">Review (30s–1m)</div><div class="value">' + rev.toLocaleString() + '</div><div class="sub">' + (total ? (rev/total*100).toFixed(1) : 0) + '% of total</div></div>' +
+    '<div class="stat-card ni-short"><div class="label">Short (1–3m)</div><div class="value">' + short_.toLocaleString() + '</div><div class="sub">' + (total ? (short_/total*100).toFixed(1) : 0) + '% of total</div></div>' +
+    '<div class="stat-card ni-medium"><div class="label">Medium (3–5m)</div><div class="value">' + med.toLocaleString() + '</div><div class="sub">' + (total ? (med/total*100).toFixed(1) : 0) + '% of total</div></div>' +
+    '<div class="stat-card ni-long"><div class="label">Long (5m+)</div><div class="value">' + long_.toLocaleString() + '</div><div class="sub">' + (total ? (long_/total*100).toFixed(1) : 0) + '% of total</div></div>';
+  document.getElementById('resultsCount').textContent = 'Showing ' + total.toLocaleString() + ' records';
+}
+
+var chartInstances = [];
+function renderCharts() {
+  chartInstances.forEach(function(c) { c.dispose(); });
+  chartInstances = [];
+
+  // 1. Records by Rep
+  var repCounts = {};
+  filtered.forEach(function(r) { repCounts[r.rep] = (repCounts[r.rep] || 0) + 1; });
+  var repsSorted = Object.keys(repCounts).sort(function(a,b) { return repCounts[b] - repCounts[a]; });
+
+  var c1 = echarts.init(document.getElementById('chartReps'));
+  chartInstances.push(c1);
+  c1.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: repsSorted, axisLabel: { rotate: 30, fontSize: 10 } },
+    yAxis: { type: 'value' },
+    series: [{ type: 'bar', data: repsSorted.map(function(r) { return repCounts[r]; }), itemStyle: { color: '#4a3728', borderRadius: [4,4,0,0] }, label: { show: true, position: 'top', fontSize: 11 } }],
+    grid: { left: 40, right: 20, top: 20, bottom: 60 }
+  });
+
+  // 2. Talk time distribution (30s brackets)
+  var brackets = {};
+  filtered.forEach(function(r) {
+    var b = Math.floor(r.talkSeconds / 30) * 30;
+    var label = fmt(b) + '-' + fmt(b + 29);
+    if (!brackets[b]) brackets[b] = { label: label, count: 0 };
+    brackets[b].count++;
+  });
+  var bKeys = Object.keys(brackets).map(Number).sort(function(a,b){ return a-b; });
+
+  var c2 = echarts.init(document.getElementById('chartDist'));
+  chartInstances.push(c2);
+  c2.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: bKeys.map(function(k){ return brackets[k].label; }), axisLabel: { rotate: 45, fontSize: 9 } },
+    yAxis: { type: 'value' },
+    series: [{ type: 'bar', data: bKeys.map(function(k){ return { value: brackets[k].count, itemStyle: { color: k < 30 ? '#dc2626' : k < 60 ? '#d97706' : k < 180 ? '#2563eb' : k < 300 ? '#7c3aed' : '#059669' } }; }), label: { show: true, position: 'top', fontSize: 9 } }],
+    grid: { left: 40, right: 20, top: 20, bottom: 80 }
+  });
+
+  // 3. Category Breakdown by Rep (stacked bar with 5 categories)
+  var stackData = {};
+  filtered.forEach(function(r) {
+    if (!stackData[r.rep]) stackData[r.rep] = { CRITICAL: 0, REVIEW: 0, SHORT: 0, MEDIUM: 0, LONG: 0 };
+    if (stackData[r.rep][r.flag] !== undefined) stackData[r.rep][r.flag]++;
+  });
+  var stackReps = Object.keys(stackData).sort(function(a,b) {
+    var ta = stackData[a].CRITICAL + stackData[a].REVIEW + stackData[a].SHORT + stackData[a].MEDIUM + stackData[a].LONG;
+    var tb = stackData[b].CRITICAL + stackData[b].REVIEW + stackData[b].SHORT + stackData[b].MEDIUM + stackData[b].LONG;
+    return tb - ta;
+  });
+
+  var c3 = echarts.init(document.getElementById('chartStack'));
+  chartInstances.push(c3);
+  c3.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['Critical (<30s)', 'Review (30s-1m)', 'Short (1-3m)', 'Medium (3-5m)', 'Long (5m+)'], top: 0, textStyle: { fontSize: 10 } },
+    xAxis: { type: 'category', data: stackReps, axisLabel: { rotate: 30, fontSize: 10 } },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'Critical (<30s)', type: 'bar', stack: 'total', data: stackReps.map(function(r){ return stackData[r].CRITICAL; }), itemStyle: { color: '#dc2626' } },
+      { name: 'Review (30s-1m)', type: 'bar', stack: 'total', data: stackReps.map(function(r){ return stackData[r].REVIEW; }), itemStyle: { color: '#d97706' } },
+      { name: 'Short (1-3m)', type: 'bar', stack: 'total', data: stackReps.map(function(r){ return stackData[r].SHORT; }), itemStyle: { color: '#2563eb' } },
+      { name: 'Medium (3-5m)', type: 'bar', stack: 'total', data: stackReps.map(function(r){ return stackData[r].MEDIUM; }), itemStyle: { color: '#7c3aed' } },
+      { name: 'Long (5m+)', type: 'bar', stack: 'total', data: stackReps.map(function(r){ return stackData[r].LONG; }), itemStyle: { color: '#059669' } }
+    ],
+    grid: { left: 40, right: 20, top: 30, bottom: 60 }
+  });
+
+  // 4. Timeline by month
+  var months = {};
+  filtered.forEach(function(r) {
+    if (!r.lastCall) return;
+    var m = r.lastCall.substring(0, 7);
+    months[m] = (months[m] || 0) + 1;
+  });
+  var mKeys = Object.keys(months).sort();
+
+  var c4 = echarts.init(document.getElementById('chartTimeline'));
+  chartInstances.push(c4);
+  c4.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: mKeys },
+    yAxis: { type: 'value' },
+    series: [{ type: 'line', data: mKeys.map(function(k){ return months[k]; }), smooth: true, areaStyle: { color: 'rgba(74,55,40,.1)' }, itemStyle: { color: '#4a3728' }, label: { show: true, fontSize: 11 } }],
+    grid: { left: 40, right: 20, top: 20, bottom: 40 }
+  });
+
+  window.onresize = function() { chartInstances.forEach(function(c){ c.resize(); }); };
+}
+
+function renderRepGrid() {
+  var repStats = {};
+  var maxTotal = 0;
+  filtered.forEach(function(r) {
+    if (!repStats[r.rep]) repStats[r.rep] = { total: 0, crit: 0, rev: 0, short: 0, med: 0, long: 0, ttSum: 0 };
+    repStats[r.rep].total++;
+    if (r.flag === 'CRITICAL') repStats[r.rep].crit++;
+    else if (r.flag === 'REVIEW') repStats[r.rep].rev++;
+    else if (r.flag === 'SHORT') repStats[r.rep].short++;
+    else if (r.flag === 'MEDIUM') repStats[r.rep].med++;
+    else if (r.flag === 'LONG') repStats[r.rep].long++;
+    repStats[r.rep].ttSum += r.talkSeconds;
+  });
+  Object.keys(repStats).forEach(function(k) { if (repStats[k].total > maxTotal) maxTotal = repStats[k].total; });
+
+  var entries = Object.keys(repStats).sort(function(a,b) { return repStats[b].total - repStats[a].total; });
+  var grid = document.getElementById('repGrid');
+  var html = '';
+  entries.forEach(function(rep) {
+    var s = repStats[rep];
+    var avgTT = s.total ? Math.round(s.ttSum / s.total) : 0;
+    var critPct = s.total ? Math.round(s.crit / s.total * 100) : 0;
+    var revPct = s.total ? Math.round(s.rev / s.total * 100) : 0;
+    var shortPct = s.total ? Math.round(s.short / s.total * 100) : 0;
+    var medPct = s.total ? Math.round(s.med / s.total * 100) : 0;
+    var pct = maxTotal ? (s.total / maxTotal * 100) : 0;
+    var stop1 = critPct;
+    var stop2 = critPct + revPct;
+    var stop3 = stop2 + shortPct;
+    var stop4 = stop3 + medPct;
+    html += '<div class="rep-card" onclick="document.getElementById(\'repFilter\').value=\'' + rep + '\';applyFilters();switchTab(document.querySelector(\'[data-tab=records]\'))">' +
+      '<div class="rep-name">' + esc(rep) + '</div>' +
+      '<div class="rep-metrics">' +
+        '<div class="metric"><div class="mv">' + s.total + '</div><div class="ml">Total</div></div>' +
+        '<div class="metric crit-metric"><div class="mv">' + s.crit + '</div><div class="ml">Critical</div></div>' +
+        '<div class="metric"><div class="mv">' + fmt(avgTT) + '</div><div class="ml">Avg Talk</div></div>' +
+      '</div>' +
+      '<div class="bar"><div class="bar-fill" style="width:' + pct + '%;background:linear-gradient(90deg,var(--red) ' + stop1 + '%,var(--amber) ' + stop1 + '%,var(--amber) ' + stop2 + '%,var(--blue) ' + stop2 + '%,var(--blue) ' + stop3 + '%,var(--purple) ' + stop3 + '%,var(--purple) ' + stop4 + '%,var(--green) ' + stop4 + '%)"></div></div>' +
+    '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+function renderOffenders() {
+  var critical = filtered.filter(function(r) { return r.flag === 'CRITICAL'; }).sort(function(a,b) { return b.attempts - a.attempts || a.talkSeconds - b.talkSeconds; }).slice(0, 15);
+  var tbody = document.getElementById('offendersBody');
+  tbody.innerHTML = critical.map(function(r) {
+    return '<tr><td><span class="rep-badge">' + esc(r.rep) + '</span></td><td>' + esc(r.customer) + '</td><td>' + esc(r.phone) + '</td><td class="crit">' + fmt(r.talkSeconds) + '</td><td style="font-weight:700">' + r.attempts + '</td><td>' + r.lastCall + '</td></tr>';
+  }).join('');
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  var ths = document.querySelectorAll('#panel-records th');
+  for (var i = 0; i < ths.length; i++) {
+    ths[i].classList.toggle('sorted', ths[i].getAttribute('data-col') === col);
+    var arrow = ths[i].querySelector('.sort-arrow');
+    if (ths[i].getAttribute('data-col') === col) arrow.innerHTML = sortDir === 1 ? '&#9650;' : '&#9660;';
+  }
+  renderRecords();
+}
+
+function renderRecords() {
+  var q = document.getElementById('searchInput').value.toLowerCase();
+  var sorted = filtered.slice().sort(function(a,b) {
+    var va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+    return sortDir * ((va || 0) - (vb || 0));
+  });
+  var totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  if (currentPage > totalPages) currentPage = totalPages || 1;
+  var start = (currentPage - 1) * PAGE_SIZE;
+  var page = sorted.slice(start, start + PAGE_SIZE);
+
+  function highlight(text) {
+    if (!q) return esc(String(text));
+    var s = esc(String(text));
+    var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return s.replace(re, '<mark>$1</mark>');
+  }
+
+  document.getElementById('recordsBody').innerHTML = page.map(function(r) {
+    var fc = flagClass(r.flag);
+    var fl = flagLabel(r.flag);
+    return '<tr><td>' + r.lastCall + '</td><td><span class="rep-badge">' + highlight(r.rep) + '</span></td><td>' + highlight(r.customer) + '</td><td>' + highlight(r.phone) + '</td><td class="' + fc + '">' + fmt(r.talkSeconds) + '</td><td>' + r.attempts + '</td><td class="' + fc + '">' + fl + '</td><td>' + r.importWeek + '</td></tr>';
+  }).join('');
+
+  // Pagination
+  var pag = document.getElementById('pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  var ph = '<button class="page-btn" onclick="goPage(' + (currentPage-1) + ')"' + (currentPage===1?' disabled':'') + '>&#8249; Prev</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2)
+      ph += '<button class="page-btn' + (i===currentPage?' active':'') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+    else if (Math.abs(i - currentPage) === 3)
+      ph += '<span style="color:var(--text3)">&hellip;</span>';
+  }
+  ph += '<button class="page-btn" onclick="goPage(' + (currentPage+1) + ')"' + (currentPage===totalPages?' disabled':'') + '>Next &#8250;</button>';
+  pag.innerHTML = ph;
+}
+
+function goPage(p) { currentPage = p; renderRecords(); window.scrollTo(0, document.getElementById('panel-records').offsetTop); }
+
+function exportCSV() {
+  var rows = [['Last Call','Rep','Customer','Mobile','Cat Name','Talk Time (s)','Talk Time','Attempts','Category','Flag','Import Week','Day','Is Final','Result Outcome']];
+  filtered.forEach(function(r) {
+    rows.push([r.lastCall, r.rep, r.customer, r.phone, r.catName, r.talkSeconds, fmt(r.talkSeconds), r.attempts, flagLabel(r.flag), r.flag, r.importWeek, r.dayOfWeek, r.isFinal ? 'Yes' : 'No', r.resultOutcome || '']);
+  });
+  var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+  var dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
+  var link = document.createElement('a');
+  link.setAttribute('href', dataUri);
+  link.setAttribute('download', 'marro_ni_dispositions_' + new Date().toISOString().slice(0,10) + '.csv');
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// --- Init ---
+(function() {
+  var reps = {};
+  DATA.forEach(function(r) { reps[r.rep] = (reps[r.rep] || 0) + 1; });
+  var sel = document.getElementById('repFilter');
+  Object.keys(reps).sort(function(a,b) { return reps[b] - reps[a]; }).forEach(function(rep) {
+    var o = document.createElement('option');
+    o.value = rep;
+    o.textContent = rep + ' (' + reps[rep] + ')';
+    sel.appendChild(o);
+  });
+  applyFilters();
+})();
+</script>
+</body></html>
